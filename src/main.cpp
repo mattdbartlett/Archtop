@@ -1,6 +1,10 @@
 #include <dxflib/dl_dxf.h>
 #include <dxflib/dl_creationadapter.h>
 
+#include <point.h>
+#include <line.h>
+#include <arc.h>
+
 
 std::ostream& operator<<(std::ostream& os, DL_LineData const& ld) {
     os << "{{" 
@@ -16,19 +20,22 @@ class Creation : public DL_CreationAdapter {
         Creation() {}
         virtual ~Creation() {}
         virtual void addLine(DL_LineData const& lineData) {
-            std::cout << "Found a line " << lineData << std::endl;
+            std::cout << Line<double>(lineData) << std::endl;
         }
 
         virtual void addArc(DL_ArcData const& arcData) {
-            std::cout << "Found an arc " << std::endl; //arcData << std::endl;
+            std::cout << Arc<double>(arcData) << std::endl; //arcData << std::endl;
         }
         virtual void addPoint(DL_PointData const& pointData) {
-            std::cout << "Found a point " << std::endl; //arcData << std::endl;
+            std::cout << Point<double>(pointData) << std::endl;
         }
     private:
 };
 
 int main(void) {
+    Arc<double> arc;
+    Line<double> line;
+
     Creation creation;
 
     DL_Dxf dxf;
