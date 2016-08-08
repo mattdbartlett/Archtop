@@ -2,6 +2,8 @@
 #include <memory>
 #include <point.h>
 #include <arc.h>
+#include <ray.h>
+#include <linesegment.h>
 #include <drawing.h>
 #include <parsedxf.h>
 #include <dxflib/dl_dxf.h>
@@ -54,7 +56,7 @@ void MainFrame::OnRun(wxCommandEvent& event) {
     wxClientDC dc(m_drawingWindow);
 
     dc.SetBrush(wxNullBrush); //turn off fill
-    wxPen myPen(*wxBLACK, 1);
+    wxPen myPen(*wxBLACK, 2);
     dc.SetPen(myPen);
 
     //dc.SetMapMode(wxMM_METRIC);
@@ -82,22 +84,17 @@ void MainFrame::OnRun(wxCommandEvent& event) {
         scale = dcSize.y/ySpan;
     }
 
-    std::cerr << "XScale " << (dcSize.x/xSpan) << " YSpan " << (dcSize.y/ySpan) << std::endl;
-
-    std::cerr << "Drawing extents X=" << xSpan << " Y=" << ySpan << std::endl;
-    std::cerr << "Window size " << dcSize.x << " , " << dcSize.y << std::endl;
-    std::cerr << "Logical scale " << scale << std::endl;
-
     dc.SetDeviceOrigin(0, dcSize.y);
 
     parser.GetDrawing().Draw(dc, scale);
 
+    LineSegment<double> xOrig(Point<double>(0,0), Point<double>(100,0));
+    LineSegment<double> yOrig(Point<double>(0,0), Point<double>(0,100));
+
+    //mark drawing center and create X/Y axes
+
     std::pair<double, double> center = parser.GetDrawing().GetCenter();
-
     dc.CrossHair(center.first*scale, center.second*scale);
-
-    Line<double> xOrig(Point<double>(0,0), Point<double>(100,0));
-    Line<double> yOrig(Point<double>(0,0), Point<double>(0,100));
     xOrig.Draw(dc, scale);
     yOrig.Draw(dc, scale);
 }

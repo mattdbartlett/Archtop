@@ -2,7 +2,7 @@
 #define PARSEDXF_H_
 
 #include <point.h>
-#include <line.h>
+#include <linesegment.h>
 #include <arc.h>
 #include <dxflib/dl_creationadapter.h>
 #include <drawing.h>
@@ -14,7 +14,7 @@ class ParseDXF : public DL_CreationAdapter {
         virtual ~ParseDXF() {}
 
         virtual void addLine(DL_LineData const& lineData) {
-            m_drawing.AddComponent(std::make_shared<Line<T>>(lineData));
+            m_drawing.AddComponent(std::make_shared<LineSegment<T>>(lineData));
         }
 
         virtual void addArc(DL_ArcData const& arcData) {

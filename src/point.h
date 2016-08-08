@@ -28,6 +28,14 @@ class Point : public DrawingComponent<T> {
             return std::make_shared<Point<T>>(*this);
         }
 
+        virtual std::list<std::pair<T, T>> Intersection(Ray<T> const& ray) const {
+            return std::list<std::pair<T,T>>();
+        }
+
+        virtual std::list<std::pair<T, T>> Intersection(Line<T> const& line) const {
+            return std::list<std::pair<T,T>>();
+        }
+
     private:
         T m_x;
         T m_y;
