@@ -8,7 +8,7 @@ AC_CONFIG_HEADERS([config.h])
 
 AC_CONFIG_MACRO_DIRS([m4])
 
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([subdir-objects])
 
 # Checks for programs.
 AC_PROG_CXX
@@ -26,7 +26,7 @@ AC_SUBST([DXFLIB_LIBS])
 
 # Checks for library functions.
 
-AC_CONFIG_FILES([Makefile src/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile test/Makefile])
 
 LT_INIT
 

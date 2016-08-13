@@ -1,6 +1,7 @@
 #ifndef DRAWING_H_
 #define DRAWING_H_
 
+#include <line.h>
 #include <list>
 
 template <typename T>
@@ -50,7 +51,66 @@ class Drawing {
         T MinY() const {return m_minY;};
 
         std::pair<T, T> GetCenter() const {
+            CalculateCenter();
             return std::pair<T,T>((m_maxX-m_minX)/2+m_minX, (m_maxY-m_minY)/2+m_minY);
+        }
+
+    private:
+        T CalculateCenter() const {
+            std::list<std::pair<T, T>> offsets;
+            T totalArea;
+            const T stepSize = 0.01;
+            for (T pos=m_minX; pos < m_maxX; pos+=stepSize) {
+                std::list<T> collissions;
+                Line<T> curLine(0,pos);
+                //find collission with each item
+                GetCollissions(curLine, collissions);
+                // if value is odd??
+
+                T tempArea = GetAreaFromIntersections(stepSize, collissions);
+                offsets.push_back(std::pair<T,T>(pos, tempArea));
+                totalArea = tempArea;
+            }
+            std::cout << "Total area is " << totalArea << std::endl;
+            return totalArea;
+        }
+
+        void GetCollissions(Line<T> const& line, std::list<T>& collissions) const {
+            for (typename component_list_t::const_iterator idx=m_components.begin();
+                 idx != m_components.end();
+                 ++idx) {
+                 std::list<std::pair<T,T>> intersections = (*idx)->Intersection(line);
+                 if (!intersections.empty()) {
+                     std::cout << "Collissions with ";
+                     (*idx)->Print(std::cout);
+                     std::cout << std::endl;
+                 }
+
+                 for (typename std::list<std::pair<T,T>>::const_iterator idx2=intersections.begin();
+                         idx2 != intersections.end();
+                         ++idx2) {
+                     collissions.push_back(idx2->second);
+                 }
+            }
+            collissions.sort();
+        }
+
+        T GetAreaFromIntersections(T width, std::list<T> const& collissions) const {
+            T result = 0;
+            if (collissions.size()%2 ==1) {
+                std::cout << "collissions are odd, (" << collissions.size() << ") fugedaboutit" << std::endl;
+                return 0;
+            }
+
+            for (typename std::list<T>::const_iterator idx = collissions.begin();
+                    idx != collissions.end();
+                    ) {
+                typename std::list<T>::const_iterator idx2 =idx;
+                ++idx;
+                result += (*idx2)-(*(idx))*width;
+                ++idx;
+            }
+            return result;
         }
 
     private:

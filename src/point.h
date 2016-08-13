@@ -36,6 +36,10 @@ class Point : public DrawingComponent<T> {
             return std::list<std::pair<T,T>>();
         }
 
+        virtual void Print(std::ostream& os) const {
+            os << *this;
+        }
+
     private:
         T m_x;
         T m_y;

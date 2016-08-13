@@ -27,6 +27,8 @@ class DrawingComponent {
          * Determine the intersection point(s) between this object and the specified line
          */
         virtual std::list<std::pair<T,T>> Intersection(Line<T> const& line) const = 0;
+
+        virtual void Print(std::ostream& os) const = 0;
 };
 
 /*template <class D, class T>

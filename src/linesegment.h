@@ -68,6 +68,10 @@ class LineSegment : public DrawingComponent<T> {
             return result;
         }
 
+        virtual void Print(std::ostream& os) const {
+            os << *this;
+        }
+
     private: //methods
         bool Intersection(T slope, T intercept, std::pair<T,T>& intersection) const {
 

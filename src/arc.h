@@ -109,6 +109,10 @@ class Arc : public DrawingComponent<T> {
             return std::list<std::pair<T,T>>();
         }
 
+        virtual void Print(std::ostream& os) const {
+            os << *this;
+        }
+
     private:
         T m_radius;
         T m_startAngle;
