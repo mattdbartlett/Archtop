@@ -3,6 +3,7 @@
 
 #include <dl_entities.h>
 #include <drawingcomponent.h>
+#include <types.h>
 
 template <typename T >
 class Point : public DrawingComponent<T> {
@@ -28,12 +29,12 @@ class Point : public DrawingComponent<T> {
             return std::make_shared<Point<T>>(*this);
         }
 
-        virtual std::list<std::pair<T, T>> Intersection(Ray<T> const& ray) const {
-            return std::list<std::pair<T,T>>();
+        virtual std::list<pt_base<T>> Intersection(Ray<T> const& ray) const {
+            return std::list<pt_base<T>>();
         }
 
-        virtual std::list<std::pair<T, T>> Intersection(Line<T> const& line) const {
-            return std::list<std::pair<T,T>>();
+        virtual std::list<pt_base<T>> Intersection(Line<T> const& line) const {
+            return std::list<pt_base<T>>();
         }
 
         virtual void Print(std::ostream& os) const {

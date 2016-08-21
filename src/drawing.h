@@ -1,6 +1,7 @@
 #ifndef DRAWING_H_
 #define DRAWING_H_
 
+#include <drawingcomponent.h>
 #include <line.h>
 #include <list>
 
@@ -50,55 +51,74 @@ class Drawing {
         T MinX() const {return m_minX;};
         T MinY() const {return m_minY;};
 
-        std::pair<T, T> GetCenter() const {
-            CalculateCenter();
-            return std::pair<T,T>((m_maxX-m_minX)/2+m_minX, (m_maxY-m_minY)/2+m_minY);
+        void Print(std::ostream& os) const {
+            os << "Drawing {" << std::endl;
+
+            for (auto idx = m_components.begin(); idx != m_components.end(); ++idx) {
+                (*idx)->Print(os);
+                os << std::endl;
+            }
+            os << "}";
         }
 
-    private:
-        T CalculateCenter() const {
-            std::list<std::pair<T, T>> offsets;
-            T totalArea;
-            const T stepSize = 0.01;
+        pt_base<T> GetCenter() const {
+            T xCenter = CalculateCenter();
+            return pt_base<T>(xCenter, (m_maxY-m_minY)/2+m_minY);
+        }
+
+        T CalculateArea(T stepSize=0.1) const {
+            T totalArea = 0;
+            //std::cout << "Calculating area over interval " << m_minX << " <-> " << m_maxX << std::endl;
             for (T pos=m_minX; pos < m_maxX; pos+=stepSize) {
                 std::list<T> collissions;
-                Line<T> curLine(0,pos);
+                Line<T> curLine(pos, -100.0, pos, 100.0);
                 //find collission with each item
                 GetCollissions(curLine, collissions);
-                // if value is odd??
 
                 T tempArea = GetAreaFromIntersections(stepSize, collissions);
-                offsets.push_back(std::pair<T,T>(pos, tempArea));
-                totalArea = tempArea;
+                totalArea += tempArea;
+                //std::cout << "Area " << totalArea << " pos=" << pos << std::endl;
             }
-            std::cout << "Total area is " << totalArea << std::endl;
             return totalArea;
         }
 
+
         void GetCollissions(Line<T> const& line, std::list<T>& collissions) const {
-            for (typename component_list_t::const_iterator idx=m_components.begin();
+            std::cout << "Testing for intersection with " << line << std::endl;
+            for (auto idx=m_components.begin();
                  idx != m_components.end();
                  ++idx) {
-                 std::list<std::pair<T,T>> intersections = (*idx)->Intersection(line);
-                 if (!intersections.empty()) {
-                     std::cout << "Collissions with ";
-                     (*idx)->Print(std::cout);
-                     std::cout << std::endl;
-                 }
+                /*std::cout << "Checking ";
+                (*idx)->Print(std::cout);
+                std::cout << " for collission" << std::endl;*/
+                
+                std::list<pt_base<T>> intersections = (*idx)->Intersection(line);
+                /*if (!intersections.empty()) {
+                    std::cout << "Collissions with ";
+                    (*idx)->Print(std::cout);
+                    std::cout << std::endl;
+                }*/
 
-                 for (typename std::list<std::pair<T,T>>::const_iterator idx2=intersections.begin();
-                         idx2 != intersections.end();
-                         ++idx2) {
-                     collissions.push_back(idx2->second);
-                 }
+                for (auto idx2=intersections.begin();
+                        idx2 != intersections.end();
+                        ++idx2) {
+                    collissions.push_back(idx2->y);
+                }
             }
             collissions.sort();
+            /*if (collissions.size() > 1) {
+                std::cout << "Detected " << collissions.size() << " with line " << line << std::endl;
+                for (auto idx=collissions.begin(); idx != collissions.end(); ++idx) {
+                    std::cout << *idx << ",";
+                }
+                std::cout << std::endl;
+            }*/
         }
 
         T GetAreaFromIntersections(T width, std::list<T> const& collissions) const {
             T result = 0;
             if (collissions.size()%2 ==1) {
-                std::cout << "collissions are odd, (" << collissions.size() << ") fugedaboutit" << std::endl;
+                //std::cout << "collissions are odd, (" << collissions.size() << ") fugedaboutit" << std::endl;
                 return 0;
             }
 
@@ -107,11 +127,44 @@ class Drawing {
                     ) {
                 typename std::list<T>::const_iterator idx2 =idx;
                 ++idx;
-                result += (*idx2)-(*(idx))*width;
+                T len = (*idx)-(*idx2);
+                result += len*width;
+                //std::cout << "Result " << result << " (len=" << len << ") first=" << *idx2 << " second=" << *idx <<  std::endl;
                 ++idx;
             }
             return result;
         }
+
+    private:
+        T CalculateCenter() const {
+            std::list<std::pair<T, T>> offsets;
+            T totalArea = 0;
+            const T stepSize = 0.01;
+            std::cout << "Calculating area over interval " << m_minX << " <-> " << m_maxX << std::endl;
+            for (T pos=m_minX; pos < m_maxX; pos+=stepSize) {
+                std::list<T> collissions;
+                Line<T> curLine(pos, -100.0, pos, 100.0);
+                //find collission with each item
+                GetCollissions(curLine, collissions);
+                // if value is odd??
+
+                T tempArea = GetAreaFromIntersections(stepSize, collissions);
+                totalArea += tempArea;
+                offsets.push_back(std::pair<T,T>(pos, totalArea));
+                //std::cout << "Area " << totalArea << " pos=" << pos << std::endl;
+            }
+            std::cout << "Total area is " << totalArea << std::endl;
+
+            for (auto idx = offsets.begin(); idx != offsets.end(); ++idx) {
+                //std::cout << "Pos " << idx->first << " area " << idx->second << std::endl;
+                if (idx->second>=totalArea/2) {
+                    return idx->first;
+                }
+            }
+            return (m_maxX-m_minX)/2.0;
+        }
+
+
 
     private:
         bool m_first;

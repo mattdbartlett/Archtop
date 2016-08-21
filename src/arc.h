@@ -2,7 +2,8 @@
 #define ARC_H_
 
 #include <drawingcomponent.h>
-#include <point.h>
+#include <memory>
+#include <types.h>
 
 class DLArcData;
 
@@ -20,7 +21,7 @@ class Arc : public DrawingComponent<T> {
         Arc(T radius, 
             T startAngle,
             T endAngle,
-            Point<T> const& center) 
+            pt_base<T> const& center) 
             : m_radius(radius)
             , m_startAngle(startAngle)
             , m_endAngle(endAngle)
@@ -39,20 +40,20 @@ class Arc : public DrawingComponent<T> {
         T GetRadius() const {return m_radius;}
         T GetStartAngle() const {return m_startAngle;}
         T GetEndAngle() const {return m_endAngle;}
-        Point<T> GetCenter() const {return m_center;}
+        pt_base<T> GetCenter() const {return m_center;}
 
-        Point<T> GetStart() const {
-            T startX = m_center.GetX()+m_radius*cos(ToRadians(m_startAngle));
-            T startY = m_center.GetY()+m_radius*sin(ToRadians(m_startAngle));
+        pt_base<T> GetStart() const {
+            T startX = m_center.x+m_radius*cos(ToRadians(m_startAngle));
+            T startY = m_center.y+m_radius*sin(ToRadians(m_startAngle));
 
-            return Point<T>(startX, startY);
+            return pt_base<T>(startX, startY);
         }
 
-        Point<T> GetEnd() const {
-            T endX = m_center.GetX()+m_radius*cos(ToRadians(m_endAngle));
-            T endY = m_center.GetY()+m_radius*sin(ToRadians(m_endAngle));
+        pt_base<T> GetEnd() const {
+            T endX = m_center.x+m_radius*cos(ToRadians(m_endAngle));
+            T endY = m_center.y+m_radius*sin(ToRadians(m_endAngle));
 
-            return Point<T>(endX, endY);
+            return pt_base<T>(endX, endY);
         }
 
         //implement drawingcomponent
@@ -60,64 +61,143 @@ class Arc : public DrawingComponent<T> {
         virtual T MinX() const {
             if (m_startAngle < 180 &&
                 m_endAngle > 180) {
-                return m_center.GetX()-m_radius;
+                return m_center.x-m_radius;
             } else {
-                return fmin(GetStart().GetX(), GetEnd().GetX());
+                return fmin(GetStart().x, GetEnd().x);
             }
         }
 
         virtual T MinY() const {
             if (m_startAngle < 270 &&
                 m_endAngle > 270) {
-                return m_center.GetY()-m_radius;
+                return m_center.y-m_radius;
             } else {
-                return fmin(GetStart().GetY(), GetEnd().GetY());
+                return fmin(GetStart().y, GetEnd().y);
             }
         }
         virtual T MaxX() const {
             if (m_startAngle > m_endAngle) {
-                return m_center.GetX()+m_radius;
+                return m_center.x+m_radius;
             } else {
-                return fmax(GetStart().GetX(), GetEnd().GetX());
+                return fmax(GetStart().x, GetEnd().x);
             }
         }
         virtual T MaxY() const {
             if (m_startAngle < 90 &&
                 m_endAngle > 90) {
-                return m_center.GetY()+m_radius;
+                return m_center.y+m_radius;
             } else {
-                return fmax(GetStart().GetY(), GetEnd().GetY());
+                return fmax(GetStart().y, GetEnd().y);
             }
         }
 
         virtual void Draw(wxDC& output, T scale) const {
             std::cerr << *this << std::endl;
-            output.DrawArc(GetStart().GetX()*scale, GetStart().GetY()*scale,
-                           GetEnd().GetX()*scale, GetEnd().GetY()*scale,
-                           GetCenter().GetX()*scale, GetCenter().GetY()*scale);
+            output.DrawArc(GetStart().x*scale, GetStart().y*scale,
+                           GetEnd().x*scale, GetEnd().y*scale,
+                           GetCenter().x*scale, GetCenter().y*scale);
         }
 
         virtual std::shared_ptr<DrawingComponent<T>> clone() const override {
             return std::make_shared<Arc<T>>(*this);
         }
 
-        virtual std::list<std::pair<T, T>> Intersection(Ray<T> const& ray) const {
-            return std::list<std::pair<T,T>>();
+        virtual std::list<pt_base<T>> Intersection(Ray<T> const& ray) const {
+
+            return std::list<pt_base<T>>();
         }
 
-        virtual std::list<std::pair<T, T>> Intersection(Line<T> const& line) const {
-            return std::list<std::pair<T,T>>();
+        virtual std::list<pt_base<T>> Intersection(Line<T> const& line) const {
+            std::list<pt_base<T>> result;
+            //special case for vertical lines
+            if (line.IsVertical())
+            {
+                T xVal = line.GetP1().x;
+                T a = 1;
+                T b = -2*m_center.y;
+                T c = pow(m_center.y,2)-pow(m_radius,2)+pow(xVal,2)-2*m_center.x*xVal+pow(m_center.x,2);
+                std::list<T> yVals = SolveQuadratic(a,b,c);
+                for (auto idx = yVals.begin(); idx != yVals.end(); ++idx) {
+                    result.push_back(pt_base<T>(xVal, *idx));
+                }
+            }
+            else
+            {
+                pt_base<T> p1(line.GetP1());
+                pt_base<T> p2(line.GetP2());
+                T slope = (p1.y-p2.y)/(p1.x-p2.x);
+                T yInt = p1.y-slope*p1.x;
+
+
+                //solve solution using the quadratic formula
+                T a = 1+pow(slope,2);
+                T b = 2*(slope*yInt-slope*m_center.y-m_center.x);
+                T c = pow(m_center.y,2)+pow(m_center.x,2)+pow(yInt,2)-pow(m_radius,2)-2*yInt*m_center.y;
+
+                std::list<T> xVals = SolveQuadratic(a,b,c);
+
+                for (auto idx = xVals.begin(); idx != xVals.end(); ++idx) {
+                    T y = slope*(*idx)+yInt;
+                    result.push_back(pt_base<T>(*idx, y));
+                }
+            }
+
+            //now check if these are on the arc
+            result = GetPointsOnArc(result);
+            
+            return result;
         }
 
         virtual void Print(std::ostream& os) const {
             os << *this;
         }
 
+        std::list<T> SolveQuadratic(T a, T b, T c) const {
+            std::list<T> results;
+            T descriminant = pow(b,2)-4*a*c;
+            //descriminiant < 0 is no intersection
+            // descriminant == 0 is a tangent
+            // we don't care about either
+            if (descriminant > 0) {
+                T descriminantSqrt = sqrt(descriminant);
+                results.push_back((-b+descriminantSqrt)/(2*a));
+                results.push_back((-b-descriminantSqrt)/(2*a));
+            }
+            return results;
+        }
+
+        std::list<pt_base<T>> GetPointsOnArc(std::list<pt_base<T>> const& vals) const {
+            std::list<pt_base<T>> result;
+            for (auto idx = vals.begin(); idx != vals.end(); ++idx) {
+                T angle = atan2((idx->y-m_center.y), (idx->x-m_center.x))*180/M_PI;
+                //atan2 returns an angle in the range pi to -pi (and we then convert to degrees).
+                if (angle < 0) {
+                    angle+=360.0L;
+                }
+                if (m_startAngle > m_endAngle) {
+                    T adj = fmod(360.0L-m_startAngle, 360.0L);
+                    T endAdj = fmod(m_endAngle+adj,360.0L);
+                    T angleAdj = fmod(angle+adj,360.0L);
+                    if (angleAdj <= endAdj && angleAdj >= 0) {
+                        result.push_back(*idx);
+                    }
+
+                } else if (angle >= m_startAngle && angle <=m_endAngle) {
+                    result.push_back(*idx);
+                }
+
+            }
+            
+            return result;
+        }
+
+    private:
+
     private:
         T m_radius;
         T m_startAngle;
         T m_endAngle;
-        Point<T> m_center;
+        pt_base<T> m_center;
 };
 
 template <typename T>

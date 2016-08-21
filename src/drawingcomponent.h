@@ -1,9 +1,10 @@
 #ifndef DRAWINGCOMPONENT_H_
 #define DRAWINGCOMPONENT_H_
 
-#include <ray.h>
 #include <line.h>
+#include <ray.h>
 #include <list>
+#include <types.h>
 
 template <typename T>
 class DrawingComponent {
@@ -21,12 +22,12 @@ class DrawingComponent {
         /**
          * Determine the intersection point(s) between this object and the specified ray
          */
-        virtual std::list<std::pair<T, T>> Intersection(Ray<T> const& ray) const = 0;
+        virtual std::list<pt_base<T>> Intersection(Ray<T> const& ray) const = 0;
 
         /**
          * Determine the intersection point(s) between this object and the specified line
          */
-        virtual std::list<std::pair<T,T>> Intersection(Line<T> const& line) const = 0;
+        virtual std::list<pt_base<T>> Intersection(Line<T> const& line) const = 0;
 
         virtual void Print(std::ostream& os) const = 0;
 };

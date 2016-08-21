@@ -88,13 +88,13 @@ void MainFrame::OnRun(wxCommandEvent& event) {
 
     parser.GetDrawing().Draw(dc, scale);
 
-    LineSegment<double> xOrig(Point<double>(0,0), Point<double>(100,0));
-    LineSegment<double> yOrig(Point<double>(0,0), Point<double>(0,100));
+    LineSegment<double> xOrig(pt_base<double>(0,0), pt_base<double>(100,0));
+    LineSegment<double> yOrig(pt_base<double>(0,0), pt_base<double>(0,100));
 
     //mark drawing center and create X/Y axes
 
-    std::pair<double, double> center = parser.GetDrawing().GetCenter();
-    dc.CrossHair(center.first*scale, center.second*scale);
+    pt_base<double> center = parser.GetDrawing().GetCenter();
+    dc.CrossHair(center.x*scale, center.y*scale);
     xOrig.Draw(dc, scale);
     yOrig.Draw(dc, scale);
 }

@@ -1,41 +1,31 @@
 #ifndef RAY_H
 #define RAY_H
 
-#include <drawingcomponent.h>
-#include <point.h>
+#include <wx/dc.h>
+#include <dl_entities.h>
+#include <memory>
 #include <math.h>
 
 template <typename T>
 class Ray {
     public:
-        Ray() : m_startX(0), m_startY(0), m_slope(0), m_yIntercept(0) {}
-        Ray(Ray<T> const& src) : m_startX(src.m_startX), m_startY(src.m_startY), m_angle(src.m_angle), m_slope(src.m_slope), m_yIntercept(src.m_yIntercept) {}
-        Ray(T startX, T startY, T angle) : m_startX(startX), m_startY(startY), m_angle(angle) {
-            m_slope = tan(m_angle*M_PI/180.0L);
-            m_yIntercept=m_startY-m_slope*m_startX;
-        }
+        Ray() : m_angle(0) {};
+        Ray(pt_base<T> start, T angle) : m_start(start), m_angle(angle) {}
 
-        ~Ray() {}
-
-        std::pair<T, T> GetStart() const {return std::pair<T,T>(m_startX, m_startY);};
+        pt_base<T> GetStart() const {return m_start;};
         T GetAngle() const {return m_angle;};
-        T GetIntercept() const {return m_yIntercept;};
-        T GetSlope() const {return m_slope;};
 
         void Draw(wxDC& output, T scale) const {
             std::cerr << *this << std::endl;
 
             T xOff = 1000.0*cos(m_angle*M_PI/180.0L);
             T yOff = 1000.0*sin(m_angle*M_PI/180.0L);
-            output.DrawLine(m_startX()*scale, m_startY()*scale, (m_startX()+xOff)*scale, (m_startY()+yOff)*scale);
+            output.DrawLine(m_start.x*scale, m_start.y*scale, (m_start.x+xOff)*scale, (m_start.y+yOff)*scale);
         }
 
     private:
-        T m_startX;
-        T m_startY;
+        pt_base<T> m_start;
         T m_angle;
-        T m_slope;
-        T m_yIntercept;
 };
 
 template <typename T>

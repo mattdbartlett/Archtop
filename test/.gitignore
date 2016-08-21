@@ -1,0 +1,13 @@
+.deps/
+.libs/
+Makefile
+archtoptest
+archtoptest.log
+archtoptest.trs
+googletest/googlemock/src/.deps/libgmock_la-gmock-all.Plo
+googletest/googlemock/src/libgmock_la-gmock-all.lo
+libgmock.la
+libgtest.la
+test-suite.log
+*.swp
+

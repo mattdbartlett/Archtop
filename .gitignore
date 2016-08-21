@@ -1,0 +1,10 @@
+Makefile
+autom4te.cache/
+config.h
+config.log
+config.status
+libtool
+m4/
+stamp-h1
+test-driver
+*.swp
