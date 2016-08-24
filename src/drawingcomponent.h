@@ -22,12 +22,12 @@ class DrawingComponent {
         /**
          * Determine the intersection point(s) between this object and the specified ray
          */
-        virtual std::list<pt_base<T>> Intersection(Ray<T> const& ray) const = 0;
+        virtual std::list<pt_base<T>> Intersection(RayBase<T> const& ray) const = 0;
 
         /**
          * Determine the intersection point(s) between this object and the specified line
          */
-        virtual std::list<pt_base<T>> Intersection(Line<T> const& line) const = 0;
+        virtual std::list<pt_base<T>> Intersection(LineBase<T> const& line) const = 0;
 
         virtual void Print(std::ostream& os) const = 0;
 };

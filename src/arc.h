@@ -7,18 +7,14 @@
 
 class DLArcData;
 
-template <typename T>
-T ToRadians(T degrees) {
-    return degrees*M_PI/180.0L;
-}
 
 template <typename T>
-class Arc : public DrawingComponent<T> {
+class ArcBase : public DrawingComponent<T> {
     public:
-        Arc() : m_radius(0), m_startAngle(0), m_endAngle(0) {
+        ArcBase() : m_radius(0), m_startAngle(0), m_endAngle(0) {
         }
 
-        Arc(T radius, 
+        ArcBase(T radius, 
             T startAngle,
             T endAngle,
             pt_base<T> const& center) 
@@ -28,14 +24,14 @@ class Arc : public DrawingComponent<T> {
             , m_center(center) {
         }
 
-        Arc(DL_ArcData const& arcData) 
+        ArcBase(DL_ArcData const& arcData) 
          : m_radius(arcData.radius)
          , m_startAngle(arcData.angle1)
          , m_endAngle(arcData.angle2)
          , m_center(arcData.cx, arcData.cy) {
         }
 
-        virtual ~Arc() {};
+        virtual ~ArcBase() {};
 
         T GetRadius() const {return m_radius;}
         T GetStartAngle() const {return m_startAngle;}
@@ -99,15 +95,36 @@ class Arc : public DrawingComponent<T> {
         }
 
         virtual std::shared_ptr<DrawingComponent<T>> clone() const override {
-            return std::make_shared<Arc<T>>(*this);
+            return std::make_shared<ArcBase<T>>(*this);
         }
 
-        virtual std::list<pt_base<T>> Intersection(Ray<T> const& ray) const {
+        virtual std::list<pt_base<T>> Intersection(RayBase<T> const& ray) const {
 
-            return std::list<pt_base<T>>();
+            T angle = ToRadians(ray.GetAngle()); //get the angle, and convert to radians
+            pt_base<T> pt2(1000*cos(angle), 1000*sin(angle));
+            pt2 += ray.GetStart();
+
+            LineBase<T> tempLine(ray.GetStart(), pt2);
+            std::list<pt_base<T>> result;
+            result = Intersection(tempLine);
+
+            std::list<pt_base<T>> filtResult;
+            for (auto idx=result.begin(); idx != result.end(); ++idx) {
+                T angle = FromRadians(atan2(idx->y-ray.GetStart().y, idx->x-ray.GetStart().x));
+                if (angle < 0) {
+                    angle += 360.0L;
+                }
+
+                //std::cout << "ray angle " << ray.GetAngle() << " intercept angle " << angle << std::endl;
+                if (fabs(angle-ray.GetAngle()) < 1.0L) {
+                    filtResult.push_back(*idx);
+                }
+            }
+
+            return filtResult;
         }
 
-        virtual std::list<pt_base<T>> Intersection(Line<T> const& line) const {
+        virtual std::list<pt_base<T>> Intersection(LineBase<T> const& line) const {
             std::list<pt_base<T>> result;
             //special case for vertical lines
             if (line.IsVertical())
@@ -128,7 +145,6 @@ class Arc : public DrawingComponent<T> {
                 T slope = (p1.y-p2.y)/(p1.x-p2.x);
                 T yInt = p1.y-slope*p1.x;
 
-
                 //solve solution using the quadratic formula
                 T a = 1+pow(slope,2);
                 T b = 2*(slope*yInt-slope*m_center.y-m_center.x);
@@ -139,6 +155,7 @@ class Arc : public DrawingComponent<T> {
                 for (auto idx = xVals.begin(); idx != xVals.end(); ++idx) {
                     T y = slope*(*idx)+yInt;
                     result.push_back(pt_base<T>(*idx, y));
+                    //std::cout << "Intercept " << *idx << "," << y << std::endl;
                 }
             }
 
@@ -169,11 +186,12 @@ class Arc : public DrawingComponent<T> {
         std::list<pt_base<T>> GetPointsOnArc(std::list<pt_base<T>> const& vals) const {
             std::list<pt_base<T>> result;
             for (auto idx = vals.begin(); idx != vals.end(); ++idx) {
-                T angle = atan2((idx->y-m_center.y), (idx->x-m_center.x))*180/M_PI;
+                T angle = FromRadians(atan2((idx->y-m_center.y), (idx->x-m_center.x)));
                 //atan2 returns an angle in the range pi to -pi (and we then convert to degrees).
                 if (angle < 0) {
                     angle+=360.0L;
                 }
+                //std::cout << "Angle = " << angle << std::endl;
                 if (m_startAngle > m_endAngle) {
                     T adj = fmod(360.0L-m_startAngle, 360.0L);
                     T endAdj = fmod(m_endAngle+adj,360.0L);
@@ -191,6 +209,7 @@ class Arc : public DrawingComponent<T> {
             return result;
         }
 
+
     private:
 
     private:
@@ -201,12 +220,14 @@ class Arc : public DrawingComponent<T> {
 };
 
 template <typename T>
-std::ostream& operator<<(std::ostream& os, Arc<T> const& rhs) {
+std::ostream& operator<<(std::ostream& os, ArcBase<T> const& rhs) {
     os << "Arc {" 
        << "r" << rhs.GetRadius() << " @" << rhs.GetCenter() << ", \\" << rhs.GetStartAngle() << " /" << rhs.GetEndAngle()
        << "s " << rhs.GetStart() << ", e " << rhs.GetEnd()
        << "}";
     return os;
 }
+
+typedef ArcBase<double> Arc;
 
 #endif

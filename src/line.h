@@ -8,10 +8,10 @@
 #include <types.h>
 
 template <typename T>
-class Line {
+class LineBase {
     public:
-        Line(pt_base<T> p1, pt_base<T> p2) : m_p1(p1), m_p2(p2) {}
-        Line(T x1, T y1, T x2, T y2): m_p1(x1,y1), m_p2(x2,y2) {}
+        LineBase(pt_base<T> p1, pt_base<T> p2) : m_p1(p1), m_p2(p2) {}
+        LineBase(T x1, T y1, T x2, T y2): m_p1(x1,y1), m_p2(x2,y2) {}
 
         pt_base<T> GetP1() const {return m_p1;};
         pt_base<T> GetP2() const {return m_p2;};
@@ -28,9 +28,11 @@ class Line {
 };
 
 template <typename T>
-std::ostream& operator<<(std::ostream& os, Line<T> const& rhs) {
+std::ostream& operator<<(std::ostream& os, LineBase<T> const& rhs) {
     os << "Line {" << rhs.GetP1() << ", " << rhs.GetP2() <<  "}";
     return os;
 }
+
+typedef LineBase<double> Line;
 
 #endif

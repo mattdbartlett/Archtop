@@ -6,12 +6,13 @@
 #include <types.h>
 
 template <typename T >
-class Point : public DrawingComponent<T> {
+class PointBase : public DrawingComponent<T> {
     public:
-        Point() : m_x(0), m_y(0) {};
-        Point(T x, T y) : m_x(x), m_y(y) { }
-        Point(DL_PointData const& pointData) : m_x(pointData.x), m_y(pointData.y) {}
-        virtual ~Point() {}
+        PointBase() : m_x(0), m_y(0) {};
+        PointBase(pt_base<T> pt) : m_x(pt.x), m_y(pt.y) {};
+        PointBase(T x, T y) : m_x(x), m_y(y) { }
+        PointBase(DL_PointData const& pointData) : m_x(pointData.x), m_y(pointData.y) {}
+        virtual ~PointBase() {}
 
         T GetX() const {return m_x;};
         T GetY() const {return m_y;};
@@ -26,14 +27,14 @@ class Point : public DrawingComponent<T> {
         }
 
         virtual std::shared_ptr<DrawingComponent<T>> clone() const override {
-            return std::make_shared<Point<T>>(*this);
+            return std::make_shared<PointBase<T>>(*this);
         }
 
-        virtual std::list<pt_base<T>> Intersection(Ray<T> const& ray) const {
+        virtual std::list<pt_base<T>> Intersection(RayBase<T> const& ray) const {
             return std::list<pt_base<T>>();
         }
 
-        virtual std::list<pt_base<T>> Intersection(Line<T> const& line) const {
+        virtual std::list<pt_base<T>> Intersection(LineBase<T> const& line) const {
             return std::list<pt_base<T>>();
         }
 
@@ -47,9 +48,11 @@ class Point : public DrawingComponent<T> {
 };
 
 template<typename T>
-std::ostream& operator<<(std::ostream& os, Point<T> const& rhs) {
+std::ostream& operator<<(std::ostream& os, PointBase<T> const& rhs) {
     os << "Pt {" << rhs.GetX() << ", " << rhs.GetY() << "}";
     return os;
 }
+
+typedef PointBase<double> Point;
 
 #endif

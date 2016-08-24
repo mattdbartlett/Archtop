@@ -38,7 +38,6 @@ bool LineIntersection(pt_base<T> pt1, pt_base<T> pt2, pt_base<T> pt3, pt_base<T>
 
     //if denominator is 0, lines are paralell (no intersection)
     if (AlmostEq(den,0.0)) {
-        std::cout << "Lines are parallel" << std::endl;
         return false;
     }
 
@@ -75,6 +74,36 @@ void operator -=(pt_base<T>& lhs, pt_base<T> const& rhs) {
     lhs.x -= rhs.x;
     lhs.y -= rhs.y;
 }
+
+template <typename T>
+T Len(pt_base<T> p1, pt_base<T> p2) {
+    return sqrt(pow(p1.x-p2.x,2)+pow(p1.y-p2.y,2));
+}
+
+template <typename T>
+class DistanceSort {
+    public:
+        DistanceSort(pt_base<T> startPt) : m_start(startPt) {};
+        bool operator()(pt_base<T> const& p1, pt_base<T> const& p2) {
+            T l1 = Len(p1, m_start);
+            T l2 = Len(p2, m_start);
+            return l1 < l2;
+        }
+    private:
+        pt_base<T> m_start;
+};
+
+template <typename T>
+T ToRadians(T degrees) {
+    return degrees*M_PI/180.0L;
+}
+
+template <typename T>
+T FromRadians(T radians) {
+    return radians*180.0L/M_PI;
+}
+
+typedef pt_base<double> pt;
      
 
 #endif

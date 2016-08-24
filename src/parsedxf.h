@@ -8,28 +8,30 @@
 #include <drawing.h>
 
 template <typename T>
-class ParseDXF : public DL_CreationAdapter {
+class ParseDXFBase : public DL_CreationAdapter {
     public:
-        ParseDXF() {}
-        virtual ~ParseDXF() {}
+        ParseDXFBase() {}
+        virtual ~ParseDXFBase() {}
 
         virtual void addLine(DL_LineData const& lineData) {
-            m_drawing.AddComponent(std::make_shared<LineSegment<T>>(lineData));
+            m_drawing.AddComponent(std::make_shared<LineSegmentBase<T>>(lineData));
         }
 
         virtual void addArc(DL_ArcData const& arcData) {
-            m_drawing.AddComponent(std::make_shared<Arc<T>>(arcData));
+            m_drawing.AddComponent(std::make_shared<ArcBase<T>>(arcData));
         }
 
         virtual void addPoint(DL_PointData const& pointData) {
-            m_drawing.AddComponent(std::make_shared<Point<T>>(pointData));
+            m_drawing.AddComponent(std::make_shared<PointBase<T>>(pointData));
         }
 
-        Drawing<T> const& GetDrawing() const {return m_drawing;}
+        DrawingBase<T> const& GetDrawing() const {return m_drawing;}
 
     private:
-        Drawing<T> m_drawing;
+        DrawingBase<T> m_drawing;
         
 };
+
+typedef ParseDXFBase<double> ParseDXF;
 
 #endif

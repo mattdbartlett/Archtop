@@ -64,7 +64,7 @@ void MainFrame::OnRun(wxCommandEvent& event) {
 
 
     DL_Dxf dxf;
-    ParseDXF<double> parser;
+    ParseDXF parser;
     dxf.in("test.dxf", &parser);
 
     wxSize dcSize(dc.GetSize()); //size of the 
@@ -88,8 +88,8 @@ void MainFrame::OnRun(wxCommandEvent& event) {
 
     parser.GetDrawing().Draw(dc, scale);
 
-    LineSegment<double> xOrig(pt_base<double>(0,0), pt_base<double>(100,0));
-    LineSegment<double> yOrig(pt_base<double>(0,0), pt_base<double>(0,100));
+    LineSegment xOrig(pt(0,0), pt(100,0));
+    LineSegment yOrig(pt(0,0), pt(0,100));
 
     //mark drawing center and create X/Y axes
 
@@ -97,6 +97,17 @@ void MainFrame::OnRun(wxCommandEvent& event) {
     dc.CrossHair(center.x*scale, center.y*scale);
     xOrig.Draw(dc, scale);
     yOrig.Draw(dc, scale);
+
+    std::shared_ptr<Drawing> reduce1(parser.GetDrawing().Reduce(0.9));
+    reduce1->Draw(dc,scale);
+    std::shared_ptr<Drawing> reduce2(parser.GetDrawing().Reduce(0.8));
+    reduce2->Draw(dc,scale);
+    std::shared_ptr<Drawing> reduce3(parser.GetDrawing().Reduce(0.7));
+    reduce3->Draw(dc,scale);
+    std::shared_ptr<Drawing> reduce4(parser.GetDrawing().Reduce(0.60));
+    reduce4->Draw(dc,scale);
+    std::shared_ptr<Drawing> reduce5(parser.GetDrawing().Reduce(0.50));
+    reduce5->Draw(dc,scale);
 }
 
 MainFrame::MainFrame(wxString const& title, wxPoint const& pos, wxSize const& size) 
