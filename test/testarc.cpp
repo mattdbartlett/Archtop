@@ -162,7 +162,7 @@ TEST(TestArc, TestSolveQuadratic) {
     double a=1.0;
     double b=4.0;
     double c=3.0;
-    std::list<double> solutions = Arc().SolveQuadratic(a,b,c);
+    std::list<double> solutions = SolveQuadratic(a,b,c);
     solutions.sort();
     EXPECT_DOUBLE_EQ(-3, solutions.front());
     solutions.pop_front();

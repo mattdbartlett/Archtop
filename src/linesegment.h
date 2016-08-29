@@ -7,6 +7,7 @@
 #include <drawingcomponent.h>
 #include <math.h>
 #include <types.h>
+#include <utilities.h>
 
 template <typename T>
 class LineSegmentBase : public DrawingComponent<T> {

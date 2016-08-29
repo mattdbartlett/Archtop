@@ -4,6 +4,7 @@
 #include <drawingcomponent.h>
 #include <memory>
 #include <types.h>
+#include <utilities.h>
 
 class DLArcData;
 
@@ -133,7 +134,7 @@ class ArcBase : public DrawingComponent<T> {
                 T a = 1;
                 T b = -2*m_center.y;
                 T c = pow(m_center.y,2)-pow(m_radius,2)+pow(xVal,2)-2*m_center.x*xVal+pow(m_center.x,2);
-                std::list<T> yVals = SolveQuadratic(a,b,c);
+                std::list<T> yVals = SolveQuadratic<T>(a,b,c);
                 for (auto idx = yVals.begin(); idx != yVals.end(); ++idx) {
                     result.push_back(pt_base<T>(xVal, *idx));
                 }
@@ -150,7 +151,7 @@ class ArcBase : public DrawingComponent<T> {
                 T b = 2*(slope*yInt-slope*m_center.y-m_center.x);
                 T c = pow(m_center.y,2)+pow(m_center.x,2)+pow(yInt,2)-pow(m_radius,2)-2*yInt*m_center.y;
 
-                std::list<T> xVals = SolveQuadratic(a,b,c);
+                std::list<T> xVals = SolveQuadratic<T>(a,b,c);
 
                 for (auto idx = xVals.begin(); idx != xVals.end(); ++idx) {
                     T y = slope*(*idx)+yInt;
@@ -169,44 +170,55 @@ class ArcBase : public DrawingComponent<T> {
             os << *this;
         }
 
-        std::list<T> SolveQuadratic(T a, T b, T c) const {
-            std::list<T> results;
-            T descriminant = pow(b,2)-4*a*c;
-            //descriminiant < 0 is no intersection
-            // descriminant == 0 is a tangent
-            // we don't care about either
-            if (descriminant > 0) {
-                T descriminantSqrt = sqrt(descriminant);
-                results.push_back((-b+descriminantSqrt)/(2*a));
-                results.push_back((-b-descriminantSqrt)/(2*a));
-            }
-            return results;
-        }
 
         std::list<pt_base<T>> GetPointsOnArc(std::list<pt_base<T>> const& vals) const {
             std::list<pt_base<T>> result;
             for (auto idx = vals.begin(); idx != vals.end(); ++idx) {
-                T angle = FromRadians(atan2((idx->y-m_center.y), (idx->x-m_center.x)));
-                //atan2 returns an angle in the range pi to -pi (and we then convert to degrees).
-                if (angle < 0) {
-                    angle+=360.0L;
-                }
-                //std::cout << "Angle = " << angle << std::endl;
-                if (m_startAngle > m_endAngle) {
-                    T adj = fmod(360.0L-m_startAngle, 360.0L);
-                    T endAdj = fmod(m_endAngle+adj,360.0L);
-                    T angleAdj = fmod(angle+adj,360.0L);
-                    if (angleAdj <= endAdj && angleAdj >= 0) {
-                        result.push_back(*idx);
-                    }
-
-                } else if (angle >= m_startAngle && angle <=m_endAngle) {
+                if (IsPointOnArc(*idx)) {
                     result.push_back(*idx);
                 }
-
             }
-            
             return result;
+        }
+
+        bool IsPointOnArc(pt_base<T> const& val) const {
+            T angle = FromRadians(atan2((val.y-m_center.y), (val.x-m_center.x)));
+            //atan2 returns an angle in the range pi to -pi (and we then convert to degrees).
+            if (angle < 0) {
+                angle+=360.0L;
+            }
+            //std::cout << "Angle = " << angle << std::endl;
+            if (m_startAngle > m_endAngle) {
+                T adj = fmod(360.0L-m_startAngle, 360.0L);
+                T endAdj = fmod(m_endAngle+adj,360.0L);
+                T angleAdj = fmod(angle+adj,360.0L);
+                if (angleAdj <= endAdj && angleAdj >= 0) {
+                    return true;
+                }
+            } else if (angle >= m_startAngle && angle <=m_endAngle) {
+                return true;
+            }
+            return false;
+        }
+
+        template <class Iterator>
+        T TestFit(Iterator start, Iterator end) const {
+            auto idx = start;
+            uint32_t num=0;
+            T sum=0;
+            for (; idx != end; ++idx) {
+                if (IsPointOnArc(*start)) {
+                    T length = Len(*start, m_center);
+                    sum += pow(length-m_radius,2);
+                }
+            }
+            return sqrt(sum/num);
+        }
+
+        /**
+         * 
+         */
+        static std::list<ArcBase<T>> FromTwoPoints(pt_base<T> p1, pt_base<T> p2, T radius) {
         }
 
 
@@ -218,6 +230,11 @@ class ArcBase : public DrawingComponent<T> {
         T m_endAngle;
         pt_base<T> m_center;
 };
+
+template <typename T, class BiDirectionalIterator>
+std::shared_ptr<ArcBase<T>> FitArc(BiDirectionalIterator start, BiDirectionalIterator end, T minFitness=0.1, uint32_t min=4) {
+    return std::shared_ptr<ArcBase<T>>();
+}
 
 template <typename T>
 std::ostream& operator<<(std::ostream& os, ArcBase<T> const& rhs) {

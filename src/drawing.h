@@ -33,7 +33,7 @@ class DrawingBase {
             }
         }
 
-        std::shared_ptr<DrawingBase> Reduce(T factor) const {
+        std::shared_ptr<DrawingBase> Reduce(T factor, wxDC& output, T scale) const {
             T grad=2;
             pt_base<T> center = GetCenter();
             std::shared_ptr<DrawingBase> result(new DrawingBase);
@@ -61,10 +61,10 @@ class DrawingBase {
             }
             //close the drawing
             result->AddComponent(std::make_shared<LineSegmentBase<T>>(first, prev));
-            return result->Smoothe(factor);;
+            return result->Smoothe(factor, output, scale);;
         }
 
-        std::shared_ptr<DrawingBase<T>> Smoothe(T factor) {
+        std::shared_ptr<DrawingBase<T>> Smoothe(T factor, wxDC& output, T scale) {
             //fit an elipse
             T a = (MaxX()+MinX())/2;
             T b = (MaxY()+MinY())/2;
@@ -120,7 +120,9 @@ class DrawingBase {
                 T elipseLen = sqrt(pow(elipseX,2)+pow(elipseY,2));
 
                 T delta = elipseLen-origLen;
-                T adjLen = origLen+delta*(1-factor);
+                //T adj = delta*(1-pow(factor,3));
+                T adj = delta*(1-factor);
+                T adjLen = origLen+adj;
 
                 pt_base<T> newPt = ray.GetPoint(adjLen);
 
@@ -135,6 +137,7 @@ class DrawingBase {
                 }
             }
             //close the drawing
+            output.DrawEllipse((center.x-a)*scale, (center.y-b)*scale,2*a*scale, 2*b*scale);
             result->AddComponent(std::make_shared<LineSegmentBase<T>>(first, prev));
 
             //result->Draw(output, scale);
