@@ -1,3 +1,4 @@
+configure
 Makefile
 autom4te.cache/
 config.h
@@ -8,3 +9,4 @@ m4/
 stamp-h1
 test-driver
 *.swp
+tags
