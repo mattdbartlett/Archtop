@@ -98,14 +98,23 @@ void MainFrame::OnRun(wxCommandEvent& event) {
     xOrig.Draw(dc, scale);
     yOrig.Draw(dc, scale);
 
-    std::shared_ptr<Drawing> reduce1(parser.GetDrawing().Reduce(0.8, dc, scale));
+
+    for (double pct=0.80; pct > 0.2; pct-=0.10) {
+
+        std::cout << "Drawing at " << pct*100 << "%" << std::endl;
+        std::shared_ptr<Drawing> reduce1(parser.GetDrawing().Reduce(pct, dc, scale));
+        reduce1->Draw(dc,scale);
+    }
+
+
+    /*std::shared_ptr<Drawing> reduce1(parser.GetDrawing().Reduce(0.8, dc, scale));
     reduce1->Draw(dc,scale);
     std::shared_ptr<Drawing> reduce2(reduce1->Reduce(0.75, dc, scale));
     reduce2->Draw(dc,scale);
     std::shared_ptr<Drawing> reduce3(reduce2->Reduce(0.67, dc, scale));
     reduce3->Draw(dc,scale);
     std::shared_ptr<Drawing> reduce4(reduce3->Reduce(0.5, dc, scale));
-    reduce4->Draw(dc,scale);
+    reduce4->Draw(dc,scale);*/
     /*std::shared_ptr<Drawing> reduce3(parser.GetDrawing().Reduce(0.7, dc, scale));
     reduce3->Draw(dc,scale);
     std::shared_ptr<Drawing> reduce4(parser.GetDrawing().Reduce(0.60, dc, scale));

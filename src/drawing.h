@@ -6,6 +6,7 @@
 #include <linesegment.h>
 #include <point.h>
 #include <list>
+#include <ellipse.h>
 
 
 template <typename T>
@@ -40,7 +41,7 @@ class DrawingBase {
             bool firstPass(true);
             pt_base<T> first;
             pt_base<T> prev;
-            for (T angle=0; angle < 360.0L; angle+=grad) {
+            for (T angle=0.5; angle < 359.5L; angle+=grad) {
                 RayBase<T> ray(center, angle);
                 std::list<pt_base<T>> collissions;
                 GetCollissions(ray, collissions, center);
@@ -107,7 +108,7 @@ class DrawingBase {
             pt_base<T> first;
             pt_base<T> prev;
             T grad=2.0;
-            for (T angle=0; angle < 360.0L; angle+=grad) {
+            for (T angle=1.0; angle < 359.0L; angle+=grad) {
                 RayBase<T> ray(center, angle);
                 std::list<pt_base<T>> collissions;
                 GetCollissions(ray, collissions, center);
@@ -150,7 +151,7 @@ class DrawingBase {
             T total=0.0;
             uint32_t num=0;
             pt_base<T> center = GetCenter();
-            for (T angle=0; angle < 360.0L; angle+=5.0) {
+            for (T angle=1.0; angle < 359.0L; angle+=5.0) {
                 RayBase<T> ray(m_center, angle);
                 std::list<pt_base<T>> collissions;
                 GetCollissions(ray, collissions, center);
