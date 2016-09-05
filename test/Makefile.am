@@ -24,7 +24,9 @@ archtoptest_SOURCES=test.cpp \
                     testarc.cpp \
                     testlinesegment.cpp \
                     testdrawing.cpp \
+                    testellipse.cpp \
                     testutilities.cpp
+
 archtoptest_LDFLAGS=`wx-config --libs`
 archtoptest_LDADD=libgtest.la libgmock.la $(DXFLIB_LIBS)
 archtoptest_CXXFLAGS=-Igoogletest/googlemock/include \

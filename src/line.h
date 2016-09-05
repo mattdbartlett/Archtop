@@ -10,7 +10,7 @@
 template <typename T>
 class LineBase {
     public:
-        LineBase(pt_base<T> p1, pt_base<T> p2) : m_p1(p1), m_p2(p2) {}
+        LineBase(pt_base<T> const& p1, pt_base<T> const& p2) : m_p1(p1), m_p2(p2) {}
         LineBase(T x1, T y1, T x2, T y2): m_p1(x1,y1), m_p2(x2,y2) {}
 
         pt_base<T> GetP1() const {return m_p1;};

@@ -15,7 +15,6 @@ class EllipseBase : public DrawingComponent<T> {
 
         EllipseBase(T xRadius, 
             T yRadius,
-            T endAngle,
             pt_base<T> const& center) 
             : m_xRadius(xRadius)
             , m_yRadius(yRadius)
@@ -45,7 +44,8 @@ class EllipseBase : public DrawingComponent<T> {
         }
 
         virtual void Draw(wxDC& output, T scale) const {
-            output.DrawEllipse(m_center.x*scale, m_center.y*scale, m_xRadius*scale, m_yRadius*scale);
+            output.DrawEllipse((m_center.x-m_xRadius)*scale, 
+                               (m_center.y-m_yRadius)*scale, m_xRadius*2*scale, m_yRadius*2*scale);
         }
 
         virtual std::shared_ptr<DrawingComponent<T>> clone() const override {
@@ -83,9 +83,7 @@ class EllipseBase : public DrawingComponent<T> {
             std::list<pt_base<T>> result;
 
             //translate the line based on center of the elipse so that the math can be simpler
-            T offsetX = line.P2().x-line.P1().x;
-            T offsetY = line.P2().y-line.P1().y;
-            LineBase<T> offsetLine(m_center, pt_base<T>(m_center.x+offsetX, m_center.y+offsetY));
+            LineBase<T> offsetLine(line.GetP1()-m_center, line.GetP2()-m_center);
 
             //equation of ellipse
             // (x/a)^2+(y/b)^2=1
@@ -93,13 +91,14 @@ class EllipseBase : public DrawingComponent<T> {
             //special case for vertical lines
             if (offsetLine.IsVertical())
             {
+                std::cout << "Vertical line" << std::endl;
                 //Y^2/b^2 = 1-(xVal/a)^2
                 //Y^2= b^2(1-(xVal/a)^2)
                 //Y = sqrt(b^2(1-(xVal/a)^2))
                 T xVal = offsetLine.GetP1().x;
                 T y = sqrt(pow(m_yRadius,2)*(1-pow((xVal/m_xRadius),2)));
-                result.push_back(pt_base<T>(xVal-offsetX, y-offsetY));
-                result.push_back(pt_base<T>(xVal,-offsetX -y-offsetY));
+                result.push_back(pt_base<T>(xVal, y)+m_center);
+                result.push_back(pt_base<T>(xVal,-y)+m_center);
             }
             else
             {
@@ -117,7 +116,7 @@ class EllipseBase : public DrawingComponent<T> {
 
                 for (auto idx = xVals.begin(); idx != xVals.end(); ++idx) {
                     T y = slope*(*idx)+yInt;
-                    result.push_back(pt_base<T>(*idx-offsetX, y-offsetY));
+                    result.push_back(pt_base<T>(*idx, y)+m_center);
                     //std::cout << "Intercept " << *idx << "," << y << std::endl;
                 }
             }

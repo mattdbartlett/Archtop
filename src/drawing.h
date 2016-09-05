@@ -6,7 +6,11 @@
 #include <linesegment.h>
 #include <point.h>
 #include <list>
+#include <map>
 #include <ellipse.h>
+#include <types.h>
+
+//#define DEBUG 1
 
 
 template <typename T>
@@ -34,7 +38,7 @@ class DrawingBase {
             }
         }
 
-        std::shared_ptr<DrawingBase> Reduce(T factor, wxDC& output, T scale) const {
+        std::shared_ptr<DrawingBase> Reduce(FactorBase<T> const& factor, wxDC& output, T scale) const {
             T grad=2;
             pt_base<T> center = GetCenter();
             std::shared_ptr<DrawingBase> result(new DrawingBase);
@@ -48,7 +52,7 @@ class DrawingBase {
 
                 //first in the list should be the closest
                 T origLen = Len(collissions.front(), center);
-                pt_base<T> newPt = ray.GetPoint(origLen*factor);
+                pt_base<T> newPt = ray.GetPoint(origLen*factor.scaling);
 
                 if (!firstPass) {
                     result->AddComponent(std::make_shared<LineSegmentBase<T>>(prev, newPt));
@@ -62,45 +66,22 @@ class DrawingBase {
             }
             //close the drawing
             result->AddComponent(std::make_shared<LineSegmentBase<T>>(first, prev));
+            #ifdef DEBUG
+            result->Draw(output, scale);
+            #endif
             return result->Smoothe(factor, output, scale);;
         }
 
-        std::shared_ptr<DrawingBase<T>> Smoothe(T factor, wxDC& output, T scale) {
-            //fit an elipse
-            T a = (MaxX()+MinX())/2;
-            T b = (MaxY()+MinY())/2;
+        std::shared_ptr<DrawingBase<T>> Smoothe(FactorBase<T> const& factor, wxDC& output, T scale) {
 
-            T fitnessCur = Fitness(a,b);
-            T fitnessPrev = 1e90;
-            std::cout << "Fitness is " << fitnessPrev << std::endl;
+
+            std::shared_ptr<EllipseBase<T>> ellipse = FitEllipse();
 
             pt_base<T> center = GetCenter();
-
-            T stepsize=0.1;
-
-            T aDir =-stepsize;
-            T bDir =-stepsize;
-
-            while (fitnessPrev > fitnessCur) {
-                a+=aDir;
-                fitnessPrev=fitnessCur;
-                fitnessCur = Fitness(a,b);
-                //output.DrawEllipse((center.x-a)*scale, (center.y-b)*scale,2*a*scale, 2*b*scale);
-                if (fitnessPrev< fitnessCur) {
-                    aDir=-aDir/2; //reverseDirection
-                    a+=aDir;
-                }
-
-                b+=bDir;
-                fitnessCur = Fitness(a,b);
-                //output.DrawEllipse((center.x-a)*scale, (center.y-b)*scale,2*a*scale, 2*b*scale);
-                if (fitnessPrev< fitnessCur) {
-                    bDir=-bDir/2; //reverseDirection
-                    b+=bDir;
-                }
-            }
-            std::cout << "Fitness " << fitnessCur << std::endl;
-            //output.DrawEllipse((center.x-a)*scale, (center.y-b)*scale,2*a*scale, 2*b*scale);
+            
+            std::cout << "Smoothing drawing with (" << MinX() << "," << MinY() << ")"
+                                             << "(" << MaxX() << "," << MaxY() << ")" 
+                                             << std::endl;
 
             //find intersection with elipse and existing drawing
             std::shared_ptr<DrawingBase<T>> result(new DrawingBase<T>);
@@ -113,19 +94,36 @@ class DrawingBase {
                 std::list<pt_base<T>> collissions;
                 GetCollissions(ray, collissions, center);
 
+                #ifdef DEBUG
+                output.DrawLine(center.x*scale, center.y*scale, collissions.front().x*scale, collissions.front().y*scale);
+                #endif
+
                 //first in the list should be the closest
                 T origLen = Len(collissions.front(), center);
 
-                T elipseX = a*cos(angle*M_PI/180.0);
-                T elipseY = b*sin(angle*M_PI/180.0);
-                T elipseLen = sqrt(pow(elipseX,2)+pow(elipseY,2));
+                auto ellipseIntersect = ellipse->Intersection(ray);
+                pt_base<T> ellipseInt = ellipseIntersect.front();
+                
+                #ifdef DEBUG
+                wxPen tempPen = output.GetPen();
+                wxPen redPen(*wxRED, 2);
+                output.SetPen(redPen);
+                output.DrawLine(collissions.front().x*scale, collissions.front().y*scale, 
+                                ellipseInt.x*scale, ellipseInt.y*scale);
+                output.SetPen(tempPen);
+                #endif
+
+                T elipseLen = Len(center, ellipseInt);
 
                 T delta = elipseLen-origLen;
                 //T adj = delta*(1-pow(factor,3));
-                T adj = delta*(1-factor);
+                T adj = delta*(1-factor.smoothing);
                 T adjLen = origLen+adj;
 
                 pt_base<T> newPt = ray.GetPoint(adjLen);
+                std::cout << "Delta " << delta << ", ellipseLen " 
+                          << elipseLen <<  ", origLen " << origLen 
+                          << ", newlen " << Len(newPt, center) << std::endl;
 
                 if (!firstPass) {
                     result->AddComponent(std::make_shared<LineSegmentBase<T>>(prev, newPt));
@@ -138,7 +136,9 @@ class DrawingBase {
                 }
             }
             //close the drawing
-            output.DrawEllipse((center.x-a)*scale, (center.y-b)*scale,2*a*scale, 2*b*scale);
+            #ifdef DEBUG
+            ellipse->Draw(output, scale);
+            #endif
             result->AddComponent(std::make_shared<LineSegmentBase<T>>(first, prev));
 
             //result->Draw(output, scale);
@@ -147,25 +147,88 @@ class DrawingBase {
             return result;
         }
 
-        T Fitness(T a, T b) const {
+        //Find an ellipse that is a best fit for the current drawing
+        std::shared_ptr<EllipseBase<T>> FitEllipse() const {
+            //fit an elipse
+            T a = (MaxX()-MinX())/2;
+            T b = (MaxY()-MinY())/2;
+            pt_base<T> curCenter = GetCenter();
+
+            std::shared_ptr<EllipseBase<T>> start(new EllipseBase<T>(a, b, curCenter));
+            std::shared_ptr<EllipseBase<T>> fittest = start;
+            T fitnessCur = Fitness(start);
+            T fitnessPrev = 1e90;
+            T stepsize=0.1;
+
+            while (fitnessPrev > fitnessCur) {
+                fitnessPrev = fitnessCur;
+                //adjust center
+                auto left =  std::make_shared<EllipseBase<T>>(fittest->GetXRadius(), 
+                                                              fittest->GetYRadius(), 
+                                                              pt_base<T>(fittest->GetCenter().x-stepsize, fittest->GetCenter().y));
+                auto right =  std::make_shared<EllipseBase<T>>(fittest->GetXRadius(), 
+                                                              fittest->GetYRadius(), 
+                                                              pt_base<T>(fittest->GetCenter().x+stepsize, fittest->GetCenter().y));
+                std::list<std::shared_ptr<EllipseBase<T>>> selection{left, right, fittest};
+                fittest = Fittest(selection);
+
+                //adjust radius
+                selection.clear();
+
+                T fxr = fittest->GetXRadius();
+                T fyr = fittest->GetYRadius();
+                pt_base<T> center = fittest->GetCenter();
+
+                selection.push_back(std::make_shared<EllipseBase<T>>(fxr+stepsize,fyr+stepsize, center));
+                selection.push_back(std::make_shared<EllipseBase<T>>(fxr+stepsize,fyr, center));
+                selection.push_back(std::make_shared<EllipseBase<T>>(fxr+stepsize,fyr-stepsize, center));
+                selection.push_back(std::make_shared<EllipseBase<T>>(fxr-stepsize,fyr+stepsize, center));
+                selection.push_back(std::make_shared<EllipseBase<T>>(fxr-stepsize,fyr, center));
+                selection.push_back(std::make_shared<EllipseBase<T>>(fxr-stepsize,fyr-stepsize, center));
+                selection.push_back(std::make_shared<EllipseBase<T>>(fxr,fyr+stepsize, center));
+                selection.push_back(std::make_shared<EllipseBase<T>>(fxr,fyr-stepsize, center));
+
+                fittest = Fittest(selection);
+                fitnessCur = Fitness(fittest);
+            }
+            return fittest;
+        }
+
+        typedef std::multimap<T, std::shared_ptr<EllipseBase<T>>> fitness_map_t;
+
+        std::shared_ptr<EllipseBase<T>> Fittest(std::list<std::shared_ptr<EllipseBase<T>>> selections) const {
+            fitness_map_t fitnessMap;
+            for (auto idx = selections.begin(); idx != selections.end(); ++idx) {
+                T fitness = Fitness(*idx);
+                fitnessMap.insert(typename fitness_map_t::value_type(fitness,*idx));
+            }
+            return fitnessMap.begin()->second;
+        }
+
+        T Fitness(std::shared_ptr<EllipseBase<T>> ellipse) const {
             T total=0.0;
             uint32_t num=0;
             pt_base<T> center = GetCenter();
-            for (T angle=1.0; angle < 359.0L; angle+=5.0) {
-                RayBase<T> ray(m_center, angle);
+            for (T angle=1.0; angle < 359.0L; angle+=10.0) {
+                RayBase<T> ray(center, angle);
                 std::list<pt_base<T>> collissions;
                 GetCollissions(ray, collissions, center);
 
                 //first in the list should be the closest
                 T colLen = Len(collissions.front(), center);
-                T elipseX = a*cos(angle*M_PI/180.0);
-                T elipseY = b*sin(angle*M_PI/180.0);
-                T elipseLen = sqrt(pow(elipseX,2)+pow(elipseY,2));
-                total += pow((elipseLen-colLen),2);
+                auto ellipseIntersect = ellipse->Intersection(ray);
+                if (ellipseIntersect.empty()) {
+                    throw std::runtime_error("No intersection with ellipse");
+                }
+
+                pt_base<T> ellipseInt = ellipseIntersect.front();
+                T ellipseLen = Len(ellipseInt, center);
+                total += pow((ellipseLen-colLen),2);
                 ++num;
             }
 
-            return sqrt(total/num);
+            T fitness = sqrt(total/num);
+            return fitness;
         }
 
         void AddComponent(std::shared_ptr<DrawingComponent<T> > component) {

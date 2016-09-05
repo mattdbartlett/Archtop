@@ -99,11 +99,16 @@ void MainFrame::OnRun(wxCommandEvent& event) {
     yOrig.Draw(dc, scale);
 
 
-    for (double pct=0.80; pct > 0.2; pct-=0.10) {
+    for (double pct=0.80; pct > 0.1; pct-=0.20) {
 
         std::cout << "Drawing at " << pct*100 << "%" << std::endl;
-        std::shared_ptr<Drawing> reduce1(parser.GetDrawing().Reduce(pct, dc, scale));
+        Factor factor(pct, pct);
+        std::shared_ptr<Drawing> reduce1(parser.GetDrawing().Reduce(factor, dc, scale));
+        //wxPen redPen(*wxRED, 2);
+        //dc.SetPen(redPen);
         reduce1->Draw(dc,scale);
+        //wxPen blackPen(*wxBLACK, 2);
+        //dc.SetPen(blackPen);
     }
 
 

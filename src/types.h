@@ -27,11 +27,30 @@ void operator +=(pt_base<T>& lhs, pt_base<T> const& rhs) {
 }
 
 template <typename T>
+pt_base<T> operator+(pt_base<T> const& lhs, pt_base<T> const& rhs) {
+    return pt_base<T>(lhs.x + rhs.x, lhs.y+rhs.y);
+}
+
+template <typename T>
 void operator -=(pt_base<T>& lhs, pt_base<T> const& rhs) {
     lhs.x -= rhs.x;
     lhs.y -= rhs.y;
 }
 
+template <typename T>
+pt_base<T> operator-(pt_base<T> const& lhs, pt_base<T> const& rhs) {
+    return pt_base<T>(lhs.x - rhs.x, lhs.y-rhs.y);
+}
+
 typedef pt_base<double> pt;
+
+template <typename T>
+struct FactorBase {
+    FactorBase(T _smoothing, T _scaling) : smoothing(_smoothing), scaling(_scaling) {}
+    T smoothing;
+    T scaling;
+};
+
+typedef FactorBase<double> Factor;
 
 #endif
