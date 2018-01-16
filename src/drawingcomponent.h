@@ -6,6 +6,10 @@
 #include <list>
 #include <types.h>
 
+class DL_WriterA;
+class DL_Dxf;
+class DL_Attributes;
+
 template <typename T>
 class DrawingComponent {
     public:
@@ -30,6 +34,10 @@ class DrawingComponent {
         virtual std::list<pt_base<T>> Intersection(LineBase<T> const& line) const = 0;
 
         virtual void Print(std::ostream& os) const = 0;
+
+        virtual void Write(DL_Dxf& dxf, 
+                           DL_WriterA& writer, 
+                           DL_Attributes const& attr) const = 0;
 };
 
 /*template <class D, class T>

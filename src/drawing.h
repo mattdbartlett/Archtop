@@ -79,9 +79,11 @@ class DrawingBase {
 
             pt_base<T> center = GetCenter();
             
+            #ifdef DEBUG
             std::cout << "Smoothing drawing with (" << MinX() << "," << MinY() << ")"
                                              << "(" << MaxX() << "," << MaxY() << ")" 
                                              << std::endl;
+            #endif
 
             //find intersection with elipse and existing drawing
             std::shared_ptr<DrawingBase<T>> result(new DrawingBase<T>);
@@ -121,9 +123,11 @@ class DrawingBase {
                 T adjLen = origLen+adj;
 
                 pt_base<T> newPt = ray.GetPoint(adjLen);
+                #ifdef DEBUG
                 std::cout << "Delta " << delta << ", ellipseLen " 
                           << elipseLen <<  ", origLen " << origLen 
                           << ", newlen " << Len(newPt, center) << std::endl;
+                #endif
 
                 if (!firstPass) {
                     result->AddComponent(std::make_shared<LineSegmentBase<T>>(prev, newPt));
@@ -357,12 +361,108 @@ class DrawingBase {
             return result;
         }
 
+        void Write(std::string const& filename) const {
+            DL_Dxf dxf;
+            DL_WriterA* writer = dxf.out(filename.c_str());
+            
+            //write the header
+            dxf.writeHeader(*writer);
+            writer->sectionEnd();
+
+            //tables section
+            writer->sectionTables();
+            //view ports
+            dxf.writeVPort(*writer);
+
+            //line type table
+            writer->tableLineTypes(25);
+            dxf.writeLineType(*writer, DL_LineTypeData("BYBLOCK", 0));
+            dxf.writeLineType(*writer, DL_LineTypeData("BYLAYER", 0));
+            dxf.writeLineType(*writer, DL_LineTypeData("CONTINUOUS", 0));
+            dxf.writeLineType(*writer, DL_LineTypeData("ACAD_ISO02W100", 0));
+            dxf.writeLineType(*writer, DL_LineTypeData("ACAD_ISO03W100", 0));
+            dxf.writeLineType(*writer, DL_LineTypeData("ACAD_ISO04W100", 0));
+            dxf.writeLineType(*writer, DL_LineTypeData("ACAD_ISO05W100", 0));
+            dxf.writeLineType(*writer, DL_LineTypeData("BORDER", 0));
+            dxf.writeLineType(*writer, DL_LineTypeData("BORDER2", 0));
+            dxf.writeLineType(*writer, DL_LineTypeData("BORDERX2", 0));
+            dxf.writeLineType(*writer, DL_LineTypeData("CENTER", 0));
+            dxf.writeLineType(*writer, DL_LineTypeData("CENTER2", 0));
+            dxf.writeLineType(*writer, DL_LineTypeData("CENTERX2", 0));
+            dxf.writeLineType(*writer, DL_LineTypeData("DASHDOT", 0));
+            dxf.writeLineType(*writer, DL_LineTypeData("DASHDOT2", 0));
+            dxf.writeLineType(*writer, DL_LineTypeData("DASHDOTX2", 0));
+            dxf.writeLineType(*writer, DL_LineTypeData("DASHED", 0));
+            dxf.writeLineType(*writer, DL_LineTypeData("DASHED2", 0));
+            dxf.writeLineType(*writer, DL_LineTypeData("DASHEDX2", 0));
+            dxf.writeLineType(*writer, DL_LineTypeData("DIVIDE", 0));
+            dxf.writeLineType(*writer, DL_LineTypeData("DIVIDE2", 0));
+            dxf.writeLineType(*writer, DL_LineTypeData("DIVIDEX2", 0));
+            dxf.writeLineType(*writer, DL_LineTypeData("DOT", 0));
+            dxf.writeLineType(*writer, DL_LineTypeData("DOT2", 0));
+            dxf.writeLineType(*writer, DL_LineTypeData("DOTX2", 0));
+            writer->tableEnd();
+
+            //layers table
+            writer->tableLayers(1);
+            dxf.writeLayer(*writer, 
+                            DL_LayerData("mainlayer", 0), 
+                            DL_Attributes(std::string(""), 
+                                          DL_Codes::black,
+                                          100,
+                                          "CONTINUOUS"));
+            writer->tableEnd();
+
+            //other tables needed per spec
+            dxf.writeStyle(*writer);
+            dxf.writeView(*writer);
+            dxf.writeUcs(*writer);
+
+            writer->tableAppid(1);
+            writer->tableAppidEntry(0x12);
+            writer->dxfString(2, "ACAD");
+            writer->dxfInt(70, 0);
+            writer->tableEnd();
+
+            //write dimension style
+
+            //Write Block records
+            dxf.writeBlockRecord(*writer);
+            dxf.writeBlockRecord(*writer, "myblock1");
+            dxf.writeBlockRecord(*writer, "myblock2");
+            writer->tableEnd();
+
+            //end tables section
+            writer->sectionEnd();
+
+            //write Blocks section
+            writer->sectionBlocks();
+            writer->sectionEnd();
+
+
+            DL_Attributes attr("mainlayer", 256, -1, "BYLAYER");
+            //entities section
+            writer->sectionEntities();
+            for (auto idx=m_components.begin(); idx != m_components.end(); ++idx) {
+                (*idx)->Write(dxf, *writer, attr);
+            }
+            writer->sectionEnd();
+
+            //write the objects section
+            dxf.writeObjects(*writer);
+            dxf.writeObjectsEnd(*writer);
+
+            writer->dxfEOF();
+            writer->close();
+            delete writer;
+        }
+
     private:
         T CalculateCenter() const {
             std::list<std::pair<T, T>> offsets;
             T totalArea = 0;
             const T stepSize = 0.01;
-            std::cout << "Calculating area over interval " << m_minX << " <-> " << m_maxX << std::endl;
+            //std::cout << "Calculating area over interval " << m_minX << " <-> " << m_maxX << std::endl;
             for (T pos=m_minX; pos < m_maxX; pos+=stepSize) {
                 std::list<T> collissions;
                 LineBase<T> curLine(pos, -100.0, pos, 100.0);

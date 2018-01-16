@@ -8,6 +8,7 @@
 #include <math.h>
 #include <types.h>
 #include <utilities.h>
+#include <dl_dxf.h>
 
 template <typename T>
 class LineSegmentBase : public DrawingComponent<T> {
@@ -88,6 +89,12 @@ class LineSegmentBase : public DrawingComponent<T> {
 
         virtual void Print(std::ostream& os) const {
             os << *this;
+        }
+
+        virtual void Write(DL_Dxf& dxf, 
+                           DL_WriterA& writer, 
+                           DL_Attributes const& attr) const {
+            dxf.writeLine(writer, DL_LineData(m_p1.x,m_p1.y,0,m_p2.x,m_p2.y,0), attr);
         }
 
     private: //methods

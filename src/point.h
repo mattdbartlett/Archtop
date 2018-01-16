@@ -42,6 +42,11 @@ class PointBase : public DrawingComponent<T> {
             os << *this;
         }
 
+        virtual void Write(DL_Dxf& dxf, 
+                           DL_WriterA& writer, 
+                           DL_Attributes const& attr) const {
+        }
+
     private:
         T m_x;
         T m_y;

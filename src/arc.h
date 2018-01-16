@@ -170,6 +170,11 @@ class ArcBase : public DrawingComponent<T> {
             os << *this;
         }
 
+        virtual void Write(DL_Dxf& dxf, 
+                           DL_WriterA& writer, 
+                           DL_Attributes const& attr) const {
+        }
+
 
         std::list<pt_base<T>> GetPointsOnArc(std::list<pt_base<T>> const& vals) const {
             std::list<pt_base<T>> result;

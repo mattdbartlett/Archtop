@@ -51,6 +51,12 @@ struct FactorBase {
     T scaling;
 };
 
+template <typename T>
+std::ostream& operator<<(std::ostream& os, FactorBase<T> rhs) {
+    os << "Smoothing=" << rhs.smoothing << " Scaling=" << rhs.scaling;
+    return os;
+}
+
 typedef FactorBase<double> Factor;
 
 #endif

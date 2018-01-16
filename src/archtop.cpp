@@ -7,6 +7,7 @@
 #include <drawing.h>
 #include <parsedxf.h>
 #include <dxflib/dl_dxf.h>
+#include <curtatecycloid.h>
 
 class Archtop: public wxApp {
     public:
@@ -65,7 +66,8 @@ void MainFrame::OnRun(wxCommandEvent& event) {
 
     DL_Dxf dxf;
     ParseDXF parser;
-    dxf.in("test.dxf", &parser);
+    std::string filename("test.dxf");
+    dxf.in(filename.c_str(), &parser);
 
     wxSize dcSize(dc.GetSize()); //size of the 
 
@@ -99,37 +101,25 @@ void MainFrame::OnRun(wxCommandEvent& event) {
     yOrig.Draw(dc, scale);
 
 
-    for (double pct=0.80; pct > 0.1; pct-=0.20) {
+    CurtateCycloid cycloid(0.25, 1.0, 6);
+    for (uint32_t idx=1; idx < cycloid.GetNumSteps(); ++idx) {
 
-        std::cout << "Drawing at " << pct*100 << "%" << std::endl;
-        Factor factor(pct, pct);
+        Factor factor(cycloid.FromHeight(idx));
+        //std::cout << "Drawing at " << factor << std::endl;
         std::shared_ptr<Drawing> reduce1(parser.GetDrawing().Reduce(factor, dc, scale));
+
+        //add a origin mark for each drawing
+        auto yTick = std::make_shared<LineSegment>(pt(center.x+1, center.y), pt(center.x-1, center.y));
+        auto xTick = std::make_shared<LineSegment>(pt(center.x, center.y+1), pt(center.x, center.y-1));
+        reduce1->AddComponent(yTick);
+        reduce1->AddComponent(xTick);
+        reduce1->Write(filename+std::to_string(idx)+".dxf");
         //wxPen redPen(*wxRED, 2);
         //dc.SetPen(redPen);
         reduce1->Draw(dc,scale);
         //wxPen blackPen(*wxBLACK, 2);
         //dc.SetPen(blackPen);
     }
-
-
-    /*std::shared_ptr<Drawing> reduce1(parser.GetDrawing().Reduce(0.8, dc, scale));
-    reduce1->Draw(dc,scale);
-    std::shared_ptr<Drawing> reduce2(reduce1->Reduce(0.75, dc, scale));
-    reduce2->Draw(dc,scale);
-    std::shared_ptr<Drawing> reduce3(reduce2->Reduce(0.67, dc, scale));
-    reduce3->Draw(dc,scale);
-    std::shared_ptr<Drawing> reduce4(reduce3->Reduce(0.5, dc, scale));
-    reduce4->Draw(dc,scale);*/
-    /*std::shared_ptr<Drawing> reduce3(parser.GetDrawing().Reduce(0.7, dc, scale));
-    reduce3->Draw(dc,scale);
-    std::shared_ptr<Drawing> reduce4(parser.GetDrawing().Reduce(0.60, dc, scale));
-    reduce4->Draw(dc,scale);
-    std::shared_ptr<Drawing> reduce5(parser.GetDrawing().Reduce(0.50, dc, scale));
-    reduce5->Draw(dc,scale);
-    std::shared_ptr<Drawing> reduce6(parser.GetDrawing().Reduce(0.40, dc, scale));
-    reduce6->Draw(dc,scale);
-    std::shared_ptr<Drawing> reduce7(parser.GetDrawing().Reduce(0.30, dc, scale));
-    reduce7->Draw(dc,scale);*/
 }
 
 MainFrame::MainFrame(wxString const& title, wxPoint const& pos, wxSize const& size) 
